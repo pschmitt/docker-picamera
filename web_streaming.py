@@ -18,8 +18,11 @@ RESOLUTION = os.environ.get('RESOLUTION', '800x600').split('x')
 RESOLUTION_X = int(RESOLUTION[0])
 RESOLUTION_Y = int(RESOLUTION[1])
 FRAMERATE = int(os.environ.get('FRAMERATE', '24'))
+ROTATION = int(os.environ.get('ROTATE', 0))
+HFLIP = os.environ.get('HFLIP', 'false').lower() == 'true'
+VFLIP = os.environ.get('VFLIP', 'false').lower() == 'true'
 
-PAGE="""\
+PAGE = """\
 <html>
 <head>
 <title>picamera MJPEG streaming demo</title>
@@ -30,6 +33,7 @@ PAGE="""\
 </body>
 </html>
 """.format(RESOLUTION_X, RESOLUTION_Y)
+
 
 class StreamingOutput(object):
     def __init__(self):
@@ -111,9 +115,12 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 
 if __name__ == '__main__':
-    with picamera.PiCamera(resolution='{}x{}'.format(RESOLUTION_X, RESOLUTION_Y),
-            framerate=FRAMERATE) as camera:
+    res = '{}x{}'.format(RESOLUTION_X, RESOLUTION_Y)
+    with picamera.PiCamera(resolution=res, framerate=FRAMERATE) as camera:
         output = StreamingOutput()
+        camera.hflip = HFLIP
+        camera.vflip = VFLIP
+        camera.rotation = ROTATION
         camera.start_recording(output, format='mjpeg')
         try:
             address = ('', 8000)
