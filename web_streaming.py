@@ -9,18 +9,22 @@ import socketserver
 
 
 # Parameters
+NO_AUTH = os.environ.get('NO_AUTH', 'false').lower() == 'true'
 AUTH_USERNAME = os.environ.get('AUTH_USERNAME', 'pi')
 AUTH_PASSWORD = os.environ.get('AUTH_PASSWORD', 'picamera')
-AUTH_BASE64 = base64.b64encode('{}:{}'.format(
-    AUTH_USERNAME, AUTH_PASSWORD).encode('utf-8'))
-BASIC_AUTH = 'Basic {}'.format(AUTH_BASE64.decode('utf-8'))
 RESOLUTION = os.environ.get('RESOLUTION', '800x600').split('x')
-RESOLUTION_X = int(RESOLUTION[0])
-RESOLUTION_Y = int(RESOLUTION[1])
 FRAMERATE = int(os.environ.get('FRAMERATE', '24'))
 ROTATION = int(os.environ.get('ROTATE', 0))
 HFLIP = os.environ.get('HFLIP', 'false').lower() == 'true'
 VFLIP = os.environ.get('VFLIP', 'false').lower() == 'true'
+PATH_PREFIX = os.environ.get('PATH_PREFIX','')
+
+AUTH_BASE64 = base64.b64encode('{}:{}'.format(
+    AUTH_USERNAME, AUTH_PASSWORD).encode('utf-8'))
+BASIC_AUTH = 'Basic {}'.format(AUTH_BASE64.decode('utf-8'))
+RESOLUTION_X = int(RESOLUTION[0])
+RESOLUTION_Y = int(RESOLUTION[1])
+
 
 PAGE = """\
 <html>
@@ -55,7 +59,9 @@ class StreamingOutput(object):
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.headers.get('Authorization') is None:
+        if NO_AUTH:
+           self.authorized_get()
+        elif self.headers.get('Authorization') is None:
             self.do_AUTHHEAD()
             self.wfile.write(b'no auth header received')
         elif self.headers.get('Authorization') == BASIC_AUTH:
@@ -71,18 +77,18 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def authorized_get(self):
-        if self.path == '/':
+        if self.path == PATH_PREFIX + '/' or self.path == PATH_PREFIX:
             self.send_response(301)
-            self.send_header('Location', '/index.html')
+            self.send_header('Location', PATH_PREFIX + '/index.html')
             self.end_headers()
-        elif self.path == '/index.html':
+        elif self.path == PATH_PREFIX + '/index.html':
             content = PAGE.encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.send_header('Content-Length', len(content))
             self.end_headers()
             self.wfile.write(content)
-        elif self.path == '/stream.mjpg':
+        elif self.path == PATH_PREFIX + '/stream.mjpg':
             self.send_response(200)
             self.send_header('Age', 0)
             self.send_header('Cache-Control', 'no-cache, private')

@@ -1,8 +1,6 @@
 sudo: required
 services:
   - docker
-env:
-  - DOCKER_IMAGE=pschmitt/picamera
 script:
   - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
   - docker run --rm --privileged multiarch/qemu-user-static:register --reset
