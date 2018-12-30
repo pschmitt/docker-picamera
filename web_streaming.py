@@ -9,6 +9,7 @@ import socketserver
 
 
 # Parameters
+NO_AUTH = os.environ.get('NO_AUTH', 'false').lower() == 'true'
 AUTH_USERNAME = os.environ.get('AUTH_USERNAME', 'pi')
 AUTH_PASSWORD = os.environ.get('AUTH_PASSWORD', 'picamera')
 RESOLUTION = os.environ.get('RESOLUTION', '800x600').split('x')
@@ -58,7 +59,9 @@ class StreamingOutput(object):
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.headers.get('Authorization') is None:
+        if NO_AUTH:
+           self.authorized_get()
+        elif self.headers.get('Authorization') is None:
             self.do_AUTHHEAD()
             self.wfile.write(b'no auth header received')
         elif self.headers.get('Authorization') == BASIC_AUTH:
