@@ -77,7 +77,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
         self.end_headers()
 
     def authorized_get(self):
-        if self.path == PATH_PREFIX + '/':
+        if self.path == PATH_PREFIX + '/' or self.path == PATH_PREFIX:
             self.send_response(301)
             self.send_header('Location', PATH_PREFIX + '/index.html')
             self.end_headers()
